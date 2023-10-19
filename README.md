@@ -215,3 +215,142 @@ public class AsynchronousFileIOExample {
 
 # More advanced topics about java.nio
 
+Let's dive into some more advanced topics related to java.nio.
+
+## Memory-Mapped Buffers
+
+Memory-mapped buffers provide a way to map a region of a file directly into memory. 
+
+This allows you to perform I/O operations directly on the mapped memory, providing potential performance benefits. 
+
+Here's a more detailed example:
+
+```java
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+
+public class AdvancedMemoryMappedBuffer {
+    public static void main(String[] args) throws Exception {
+        RandomAccessFile file = new RandomAccessFile("advancedMappedFile.txt", "rw");
+        FileChannel channel = file.getChannel();
+
+        // Mapping only a portion of the file into memory
+        MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, 1024);
+
+        // Reading and writing data using the buffer
+        buffer.putInt(123);
+        buffer.put("Hello, Memory-Mapped Buffer!".getBytes());
+
+        // Flush changes to the file
+        buffer.force();
+
+        // Unmap the buffer (optional, as it will be automatically unmapped when the program exits)
+        ((sun.nio.ch.DirectBuffer) buffer).cleaner().clean();
+
+        // Closing the channel and file
+        channel.close();
+        file.close();
+    }
+}
+```
+
+## Scatter-Gather I/O
+
+Scatter-Gather I/O allows you to read or write to multiple buffers in a single I/O operation. This is useful when dealing with complex data structures. Here's an example:
+
+```java
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+
+public class ScatterGatherIO {
+    public static void main(String[] args) throws Exception {
+        RandomAccessFile file = new RandomAccessFile("scatterGatherFile.txt", "rw");
+        FileChannel channel = file.getChannel();
+
+        // Creating multiple buffers for scatter operation
+        ByteBuffer buffer1 = ByteBuffer.allocate(10);
+        ByteBuffer buffer2 = ByteBuffer.allocate(20);
+
+        ByteBuffer[] buffers = { buffer1, buffer2 };
+
+        // Scatter read into multiple buffers
+        channel.read(buffers);
+
+        // Do something with the data in individual buffers
+
+        // Creating multiple buffers for gather operation
+        ByteBuffer buffer3 = ByteBuffer.allocate(10);
+        ByteBuffer buffer4 = ByteBuffer.allocate(20);
+
+        ByteBuffer[] gatherBuffers = { buffer3, buffer4 };
+
+        // Do something to fill data into individual buffers
+
+        // Gather write from multiple buffers
+        channel.write(gatherBuffers);
+
+        // Closing the channel and file
+        channel.close();
+        file.close();
+    }
+}
+```
+
+## Non-blocking I/O with Selectors
+
+Selectors allow a single thread to manage multiple channels, which is useful for handling I/O operations without blocking the entire application. Here's a simplified example:
+
+```java
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SelectionKey;
+import java.util.Iterator;
+import java.util.Set;
+
+public class AdvancedSelectorExample {
+    public static void main(String[] args) throws Exception {
+        Selector selector = Selector.open();
+
+        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+        serverSocketChannel.socket().bind(null);
+        serverSocketChannel.configureBlocking(false);
+
+        // Register the server socket channel with the selector for accepting connections
+        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+
+        while (true) {
+            int readyChannels = selector.select();
+
+            if (readyChannels == 0) {
+                continue;
+            }
+
+            Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            Iterator<SelectionKey> keyIterator = selectedKeys.iterator();
+
+            while (keyIterator.hasNext()) {
+                SelectionKey key = keyIterator.next();
+
+                if (key.isAcceptable()) {
+                    // Accept the connection
+                    SocketChannel socketChannel = serverSocketChannel.accept();
+                    socketChannel.configureBlocking(false);
+
+                    // Register the new socket channel for reading
+                    socketChannel.register(selector, SelectionKey.OP_READ);
+                } else if (key.isReadable()) {
+                    // Handle read operation
+                    // ...
+                }
+
+                keyIterator.remove();
+            }
+        }
+    }
+}
+```
+
+These advanced topics provide a deeper understanding of java.nio and its capabilities. 
