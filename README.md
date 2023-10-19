@@ -108,3 +108,110 @@ public class SelectorExample {
 These examples provide a basic understanding of java.nio concepts. 
 
 The package is extensive, and there are more features and classes to explore based on specific use cases.
+
+Let's explore a few more examples with different aspects of java.nio.
+
+## 4. Memory-Mapped Files
+
+Memory-mapped files allow you to map a region of a file directly into memory. Changes made to the buffer affect the file, and vice versa.
+
+```java
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+
+public class MemoryMappedFileExample {
+    public static void main(String[] args) throws Exception {
+        RandomAccessFile file = new RandomAccessFile("mappedFile.txt", "rw");
+        FileChannel channel = file.getChannel();
+
+        // Mapping the file into memory
+        MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, 1024);
+
+        // Writing data to the buffer
+        buffer.put("Hello, Memory-Mapped File!".getBytes());
+
+        // Flushing changes to the file
+        buffer.force();
+
+        // Closing the channel and file
+        channel.close();
+        file.close();
+    }
+}
+```
+
+## 5. File Locking
+
+File locking can be used to prevent multiple processes from concurrently modifying a file.
+
+```java
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+
+public class FileLockExample {
+    public static void main(String[] args) throws Exception {
+        RandomAccessFile file = new RandomAccessFile("lockedFile.txt", "rw");
+        FileChannel channel = file.getChannel();
+
+        // Acquiring an exclusive lock on the file
+        FileLock lock = channel.lock();
+
+        // Performing operations on the locked file
+
+        // Releasing the lock
+        lock.release();
+
+        // Closing the channel and file
+        channel.close();
+        file.close();
+    }
+}
+```
+
+## 6. Asynchronous File I/O
+
+Java NIO provides asynchronous I/O operations for improved performance.
+
+```java
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.Future;
+
+public class AsynchronousFileIOExample {
+    public static void main(String[] args) throws Exception {
+        Path path = Path.of("asyncFile.txt");
+
+        // Opening an asynchronous file channel
+        AsynchronousFileChannel channel = AsynchronousFileChannel.open(
+                path, StandardOpenOption.READ, StandardOpenOption.WRITE);
+
+        // Reading data asynchronously
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
+        Future<Integer> readResult = channel.read(buffer, 0);
+
+        // Performing other tasks while reading is in progress
+
+        // Waiting for the read operation to complete
+        readResult.get();
+
+        // Writing data asynchronously
+        buffer.flip(); // Prepare buffer for writing
+        Future<Integer> writeResult = channel.write(buffer, 0);
+
+        // Performing other tasks while writing is in progress
+
+        // Waiting for the write operation to complete
+        writeResult.get();
+
+        // Closing the channel
+        channel.close();
+    }
+}
+```
+
+# More advanced topics about java.nio
+
